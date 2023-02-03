@@ -1,28 +1,42 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class Movement : MonoBehaviour
 {
+    private bool isTouchingGround;
 
+    public Color cubeColor;
+    public Color cubeColorRed;
+    public Color cubeColorBlue;
+
+    public float maxSpeed = 100;
     public float jumpForce;
     public float rayDistance = 1;
     public bool canJump = true;
     public bool canDoubleJump = true;
+    public int charges = 3;
+
+    public float dashForce;
 
     public Transform groundTransform;
 
     private RaycastHit2D hitData;
 
-    private Vector3 movement;
+    private Vector2 movement;
     public float speed = 5;
 
+    private Light2D l2d;
+    private SpriteRenderer sr;
     private Rigidbody2D rb;
     
     // Start is called before the first frame update
     void Start()
     {
         rb = gameObject.GetComponent<Rigidbody2D>();
+        sr = gameObject.GetComponent<SpriteRenderer>();
+        l2d = gameObject.GetComponent<Light2D>();
     }
 
     // Update is called once per frame
@@ -30,12 +44,11 @@ public class Movement : MonoBehaviour
     {
         float moveHorizontal = Input.GetAxisRaw("Horizontal");
 
-        movement = new Vector3(moveHorizontal, 0, 0f);
+        movement = new Vector2(moveHorizontal, 0);
 
         movement = movement * speed * Time.deltaTime;
 
-        
-        if(Input.GetButtonDown("Fire1"))
+        if (Input.GetButtonDown("Fire1"))
         {
             //Debug.Log("Button Hit");
             Jump();
@@ -43,35 +56,63 @@ public class Movement : MonoBehaviour
 
         if(Input.GetButtonDown("Fire2"))
         {
-            gameObject.GetComponent<SpriteRenderer>().color = Color.red;
+            Dash();
         }
 
         if (Input.GetButtonDown("Fire3"))
         {
-            gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
+            //sr.color = Color.blue;
         }
 
         if (Input.GetButtonDown("Jump"))
         {
-            gameObject.GetComponent<SpriteRenderer>().color = Color.green;
+           //sr.color = Color.green;
         }
 
-        Debug.DrawRay(gameObject.transform.position, Vector2.down, Color.red);
+        rb.position = rb.position + movement;
+    }
 
-        hitData = Physics2D.Linecast(gameObject.transform.position, );
+    private void LateUpdate()
+    {
+        hitData = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("Ground"));
 
-        if(hitData.collider != null)
+        if (hitData.collider)
         {
-            Debug.Log(hitData.collider.gameObject.name);
+            //Debug.Log(hitData.collider.gameObject.name);
+            canDoubleJump = true;
+            canJump = true;
+            isTouchingGround = true;
+            charges = 3;
+        }
+        else
+        {
+            isTouchingGround = false;
         }
 
+        if(isTouchingGround)
+        {
+            sr.color = cubeColorBlue;
+            cubeColor = cubeColorBlue;
+
+            l2d.color = cubeColor;
+        }
+        else
+        {
+            sr.color = cubeColorRed;
+            cubeColor = cubeColorRed;
+
+            l2d.color = cubeColor;
+
+            canJump = false;
+        }
+
+        /*
         if (hitData.collider.CompareTag("Ground"))
         {
             canDoubleJump = true;
             canJump = true;
         }
-
-        transform.position += movement;
+        */
     }
 
     public void Jump()
@@ -87,5 +128,19 @@ public class Movement : MonoBehaviour
             canDoubleJump = false;
         }
      }
+
+    public void Dash()
+    {
+        if(charges > 0)
+        {
+            Debug.Log("Dashin");
+            rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
+            this.Wait(0.1f, () =>
+            {
+                rb.velocity.Set(0, rb.velocity.y);
+            });
+            charges--;
+        }
+    }
  }
 
