@@ -1091,7 +1091,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.8, g: 0.11764706, b: 0.11764706, a: 1}
+  m_Color: {r: 0.1254902, g: 0.4745098, b: 0.7254902, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -1132,15 +1132,17 @@ MonoBehaviour:
   cubeColor: {r: 0.12677999, g: 0.4758487, b: 0.7264151, a: 1}
   cubeColorRed: {r: 0.8018868, g: 0.11725702, b: 0.11725702, a: 1}
   cubeColorBlue: {r: 0.1254902, g: 0.4745098, b: 0.7254902, a: 1}
+  speed: 10
   maxSpeed: 100
-  jumpForce: 12
-  rayDistance: 1
-  canJump: 1
-  canDoubleJump: 1
+  acceleration: 7
+  deceleration: 7
+  jumpForce: 15
+  dashForce: 20
+  bigJumpForce: 100
+  dashRechargeTime: 0.3
+  bigJumpChargeTime: 2
   charges: 3
-  dashForce: 10
   groundTransform: {fileID: 1163873422}
-  speed: 7.5
 --- !u!50 &1404245254
 Rigidbody2D:
   serializedVersion: 4
@@ -1156,7 +1158,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 2
+  m_GravityScale: 2.5
   m_Material: {fileID: 0}
   m_Interpolate: 0
   m_SleepingMode: 1
@@ -1204,7 +1206,7 @@ MonoBehaviour:
   m_LightType: 3
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.522
-  m_Color: {r: 0.8, g: 0.11764706, b: 0.11764706, a: 1}
+  m_Color: {r: 0.1254902, g: 0.4745098, b: 0.7254902, a: 1}
   m_Intensity: 10
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0

@@ -5,32 +5,57 @@ using UnityEngine.Rendering.Universal;
 
 public class Movement : MonoBehaviour
 {
-    private bool isTouchingGround;
+    #region Public Variables
 
     public Color cubeColor;
     public Color cubeColorRed;
     public Color cubeColorBlue;
 
+    public float speed = 5;
     public float maxSpeed = 100;
-    public float jumpForce;
-    public float rayDistance = 1;
-    public bool canJump = true;
-    public bool canDoubleJump = true;
-    public int charges = 3;
 
+    public float acceleration;
+    public float deceleration;
+   
+    public float jumpForce;
     public float dashForce;
+    public float bigJumpForce;
+
+    public float dashRechargeTime;
+    public float bigJumpChargeTime;
+
+    public int charges = 3;
 
     public Transform groundTransform;
 
+    #endregion
+
+    #region Private Variables
+    private bool canMove = true;
+
+    private bool isTouchingGrass;
+
+    private bool isBlue = true;
+
     private RaycastHit2D hitData;
 
-    private Vector2 movement;
-    public float speed = 5;
+    private bool canJump = true;
+    private bool canDoubleJump = true;
+
+    private float bigJumpTimer = 0;
+    private bool willBigJump;
+
+    private bool canDash;
+    private float dashTimer = 0;
+
+    private float moveHorizontal;
 
     private Light2D l2d;
     private SpriteRenderer sr;
     private Rigidbody2D rb;
-    
+
+    #endregion
+
     // Start is called before the first frame update
     void Start()
     {
@@ -42,11 +67,14 @@ public class Movement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float moveHorizontal = Input.GetAxisRaw("Horizontal");
+        
+        moveHorizontal = Input.GetAxisRaw("Horizontal");
 
-        movement = new Vector2(moveHorizontal, 0);
+        /*
+        \movement = new Vector2(moveHorizontal, 0);
 
         movement = movement * speed * Time.deltaTime;
+        */
 
         if (Input.GetButtonDown("Fire1"))
         {
@@ -56,20 +84,113 @@ public class Movement : MonoBehaviour
 
         if(Input.GetButtonDown("Fire2"))
         {
-            Dash();
+            Dash(canDash);
         }
 
-        if (Input.GetButtonDown("Fire3"))
+        if(Input.GetButtonDown("Fire3"))
         {
-            //sr.color = Color.blue;
+            bigJumpTimer = 0;
+        }
+
+        if (Input.GetButton("Fire3"))
+        {
+            canMove = false;
+
+            if (willBigJump)
+            {
+                sr.color = Color.yellow;
+                l2d.color = Color.magenta;
+            }
+            
+            if(!willBigJump)
+            {
+                bigJumpTimer += Time.deltaTime;
+                
+                if (bigJumpTimer >= bigJumpChargeTime && isTouchingGrass)
+                {
+                    willBigJump = true;
+                    bigJumpTimer = 0;
+                    charges--;
+                }
+            }
+        }
+
+        if(Input.GetButtonUp("Fire3"))
+        {
+            canMove = true;
+            
+            if(willBigJump)
+            {
+                rb.AddForce(Vector2.up * bigJumpForce, ForceMode2D.Impulse);
+                willBigJump = false;
+
+                if(isBlue)
+                {
+                    sr.color = cubeColorBlue;
+                    cubeColor = cubeColorBlue;
+
+                    l2d.color = cubeColor;
+                }
+                else
+                {
+                    sr.color = cubeColorRed;
+                    cubeColor = cubeColorRed;
+
+                    l2d.color = cubeColor;
+                }
+            }
         }
 
         if (Input.GetButtonDown("Jump"))
         {
-           //sr.color = Color.green;
+            if(isBlue)
+            {
+                sr.color = cubeColorRed;
+                cubeColor = cubeColorRed;
+
+                l2d.color = cubeColor;
+
+                isBlue = false;
+            }
+            else
+            {
+                sr.color = cubeColorBlue;
+                cubeColor = cubeColorBlue;
+
+                l2d.color = cubeColor;
+
+                isBlue = true;
+            }
         }
 
-        rb.position = rb.position + movement;
+
+        if(!canDash)
+        {
+            dashTimer += Time.deltaTime;
+            Debug.Log(dashTimer);
+            if (dashTimer >= dashRechargeTime)
+            {
+                canDash = true;
+            }
+        }
+        
+        //rb.position = rb.position + movement;
+    }
+
+    private void FixedUpdate()
+    {
+        float targetSpeed = moveHorizontal * speed;
+
+        float speedDif = targetSpeed - rb.velocity.x;
+
+        float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
+
+        float movement = Mathf.Pow(Mathf.Abs(speedDif) * accelRate, 0.9f) * Mathf.Sign(speedDif);
+
+        if(canMove)
+        {
+            rb.AddForce(movement * Vector2.right);
+        }
     }
 
     private void LateUpdate()
@@ -81,28 +202,20 @@ public class Movement : MonoBehaviour
             //Debug.Log(hitData.collider.gameObject.name);
             canDoubleJump = true;
             canJump = true;
-            isTouchingGround = true;
+            isTouchingGrass = true;
             charges = 3;
         }
         else
         {
-            isTouchingGround = false;
+            isTouchingGrass = false;
         }
 
-        if(isTouchingGround)
+        if(isTouchingGrass)
         {
-            sr.color = cubeColorBlue;
-            cubeColor = cubeColorBlue;
-
-            l2d.color = cubeColor;
+            canJump = true;
         }
         else
         {
-            sr.color = cubeColorRed;
-            cubeColor = cubeColorRed;
-
-            l2d.color = cubeColor;
-
             canJump = false;
         }
 
@@ -117,30 +230,40 @@ public class Movement : MonoBehaviour
 
     public void Jump()
     {
-        if (canJump)
+        if(canMove)
         {
-            rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
-            canJump = false;
-        }
-        else if (canDoubleJump)
-        {
-            rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
-            canDoubleJump = false;
+            if (canJump)
+            {
+                rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
+                canJump = false;
+            }
+            else if (canDoubleJump)
+            {
+                rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
+                canDoubleJump = false;
+            }
         }
      }
 
-    public void Dash()
-    {
-        if(charges > 0)
+    public void Dash(bool ableDash)
+    {   
+        if(canMove)
         {
-            Debug.Log("Dashin");
-            rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
-            this.Wait(0.1f, () =>
+            if (charges > 0 && ableDash)
             {
-                rb.velocity.Set(0, rb.velocity.y);
-            });
-            charges--;
+                Debug.Log("Dashin");
+                rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
+
+                this.Wait(0.1f, () =>
+                {
+                    rb.velocity.Set(0, rb.velocity.y);
+                });
+
+                dashTimer = 0;
+                canDash = false;
+                charges--;
+            }
         }
-    }
+    }     
  }
 
