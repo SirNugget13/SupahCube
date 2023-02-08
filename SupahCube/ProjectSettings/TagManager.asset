@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Ground
+  - Blue
+  - Red
   layers:
   - Default
   - TransparentFX
@@ -12,11 +14,11 @@ TagManager:
   - 
   - Water
   - UI
+  - BlueGround
+  - RedGround
   - Ground
-  - 
-  - 
-  - 
-  - 
+  - Blue
+  - Red
   - 
   - 
   - 

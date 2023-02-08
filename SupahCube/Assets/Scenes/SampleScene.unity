@@ -136,7 +136,7 @@ GameObject:
   - component: {fileID: 31743419}
   m_Layer: 6
   m_Name: Square
-  m_TagString: Ground
+  m_TagString: Blue
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -209,7 +209,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.023584902, g: 0.5336915, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -356,7 +356,7 @@ GameObject:
   - component: {fileID: 321763875}
   - component: {fileID: 321763874}
   - component: {fileID: 321763873}
-  m_Layer: 6
+  m_Layer: 8
   m_Name: Square (1)
   m_TagString: Ground
   m_Icon: {fileID: 0}
@@ -802,9 +802,9 @@ GameObject:
   - component: {fileID: 971673824}
   - component: {fileID: 971673823}
   - component: {fileID: 971673822}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Square (2)
-  m_TagString: Ground
+  m_TagString: Red
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -877,7 +877,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -1006,7 +1006,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1163873422}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: GroundTransform
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1042,7 +1042,7 @@ GameObject:
   - component: {fileID: 1404245255}
   - component: {fileID: 1404245254}
   - component: {fileID: 1404245256}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: SupahCube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1129,20 +1129,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f892652b1b55da64496b7748f507ebbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  h1: 0
+  h2: 0
+  h3: 0
   cubeColor: {r: 0.12677999, g: 0.4758487, b: 0.7264151, a: 1}
   cubeColorRed: {r: 0.8018868, g: 0.11725702, b: 0.11725702, a: 1}
   cubeColorBlue: {r: 0.1254902, g: 0.4745098, b: 0.7254902, a: 1}
-  speed: 10
+  cubeColorBigJumpCharged: {r: 0.6149782, g: 0.2216981, b: 1, a: 1}
+  speed: 12
   maxSpeed: 100
   acceleration: 7
   deceleration: 7
   jumpForce: 15
   dashForce: 20
-  bigJumpForce: 100
+  bigJumpForce: 45
   dashRechargeTime: 0.3
   bigJumpChargeTime: 2
   charges: 3
   groundTransform: {fileID: 1163873422}
+  isTouchingGrass: 0
 --- !u!50 &1404245254
 Rigidbody2D:
   serializedVersion: 4
@@ -1280,7 +1285,7 @@ GameObject:
   - component: {fileID: 1516980153}
   - component: {fileID: 1516980152}
   - component: {fileID: 1516980154}
-  m_Layer: 6
+  m_Layer: 8
   m_Name: Ground
   m_TagString: Ground
   m_Icon: {fileID: 0}

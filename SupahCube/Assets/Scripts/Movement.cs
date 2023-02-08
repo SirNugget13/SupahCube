@@ -7,9 +7,14 @@ public class Movement : MonoBehaviour
 {
     #region Public Variables
 
+    public bool h1;
+    public bool h2;
+    public bool h3;
+
     public Color cubeColor;
     public Color cubeColorRed;
     public Color cubeColorBlue;
+    public Color cubeColorBigJumpCharged;
 
     public float speed = 5;
     public float maxSpeed = 100;
@@ -33,11 +38,14 @@ public class Movement : MonoBehaviour
     #region Private Variables
     private bool canMove = true;
 
-    private bool isTouchingGrass;
+    public bool isTouchingGrass;
 
     private bool isBlue = true;
 
     private RaycastHit2D hitData;
+    private RaycastHit2D hitData2;
+    private RaycastHit2D hitData3;
+
 
     private bool canJump = true;
     private bool canDoubleJump = true;
@@ -53,6 +61,7 @@ public class Movement : MonoBehaviour
     private Light2D l2d;
     private SpriteRenderer sr;
     private Rigidbody2D rb;
+    private BoxCollider2D bc;
 
     #endregion
 
@@ -62,23 +71,18 @@ public class Movement : MonoBehaviour
         rb = gameObject.GetComponent<Rigidbody2D>();
         sr = gameObject.GetComponent<SpriteRenderer>();
         l2d = gameObject.GetComponent<Light2D>();
+        bc = gameObject.GetComponent<BoxCollider2D>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
         moveHorizontal = Input.GetAxisRaw("Horizontal");
 
-        /*
-        \movement = new Vector2(moveHorizontal, 0);
-
-        movement = movement * speed * Time.deltaTime;
-        */
+        #region Button Inputs
 
         if (Input.GetButtonDown("Fire1"))
         {
-            //Debug.Log("Button Hit");
             Jump();
         }
 
@@ -94,23 +98,29 @@ public class Movement : MonoBehaviour
 
         if (Input.GetButton("Fire3"))
         {
-            canMove = false;
+            if(isTouchingGrass)
+            {
+                canMove = false;
 
-            if (willBigJump)
-            {
-                sr.color = Color.yellow;
-                l2d.color = Color.magenta;
-            }
-            
-            if(!willBigJump)
-            {
-                bigJumpTimer += Time.deltaTime;
-                
-                if (bigJumpTimer >= bigJumpChargeTime && isTouchingGrass)
+                l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);//Mathf.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime);
+                l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.8f, bigJumpChargeTime * Time.deltaTime);
+
+                if (willBigJump)
                 {
-                    willBigJump = true;
-                    bigJumpTimer = 0;
-                    charges--;
+                    sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 0.2f);
+                    l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1.5f, 0.2f);
+                }
+
+                if (!willBigJump)
+                {
+                    bigJumpTimer += Time.deltaTime;
+
+                    if (bigJumpTimer >= bigJumpChargeTime && isTouchingGrass)
+                    {
+                        willBigJump = true;
+                        bigJumpTimer = 0;
+                        charges--;
+                    }
                 }
             }
         }
@@ -118,26 +128,31 @@ public class Movement : MonoBehaviour
         if(Input.GetButtonUp("Fire3"))
         {
             canMove = true;
-            
-            if(willBigJump)
+
+            if (isBlue)
+            {
+                l2d.pointLightOuterRadius = 1.5f;
+
+                sr.color = cubeColorBlue;
+                cubeColor = cubeColorBlue;
+
+                l2d.color = cubeColor;
+            }
+            else
+            {
+                l2d.pointLightOuterRadius = 1.5f;
+
+                sr.color = cubeColorRed;
+                cubeColor = cubeColorRed;
+
+                l2d.color = cubeColor;
+            }
+
+
+            if (willBigJump)
             {
                 rb.AddForce(Vector2.up * bigJumpForce, ForceMode2D.Impulse);
                 willBigJump = false;
-
-                if(isBlue)
-                {
-                    sr.color = cubeColorBlue;
-                    cubeColor = cubeColorBlue;
-
-                    l2d.color = cubeColor;
-                }
-                else
-                {
-                    sr.color = cubeColorRed;
-                    cubeColor = cubeColorRed;
-
-                    l2d.color = cubeColor;
-                }
             }
         }
 
@@ -145,6 +160,8 @@ public class Movement : MonoBehaviour
         {
             if(isBlue)
             {
+                gameObject.layer = 10;
+                
                 sr.color = cubeColorRed;
                 cubeColor = cubeColorRed;
 
@@ -154,6 +171,8 @@ public class Movement : MonoBehaviour
             }
             else
             {
+                gameObject.layer = 9;
+
                 sr.color = cubeColorBlue;
                 cubeColor = cubeColorBlue;
 
@@ -163,8 +182,9 @@ public class Movement : MonoBehaviour
             }
         }
 
+        #endregion
 
-        if(!canDash)
+        if (!canDash)
         {
             dashTimer += Time.deltaTime;
             Debug.Log(dashTimer);
@@ -179,6 +199,8 @@ public class Movement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        #region Movement
+
         float targetSpeed = moveHorizontal * speed;
 
         float speedDif = targetSpeed - rb.velocity.x;
@@ -191,26 +213,61 @@ public class Movement : MonoBehaviour
         {
             rb.AddForce(movement * Vector2.right);
         }
+
+        #endregion
     }
 
     private void LateUpdate()
     {
-        hitData = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("Ground"));
+        #region Jump Manager
+
+        hitData = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("BlueGround"));
+        hitData2 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("RedGround"));
+        hitData3 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("Ground"));
 
         if (hitData.collider)
         {
-            //Debug.Log(hitData.collider.gameObject.name);
+            if(!isBlue)
+            {
+                //Debug.Log(hitData.collider.gameObject.name);
+                canDoubleJump = true;
+                canJump = true;
+                isTouchingGrass = true;
+                charges = 3;
+            }
+        }
+
+        if (hitData2.collider)
+        {
+            if(isBlue)
+            {
+                //Debug.Log(hitData.collider.gameObject.name);
+                canDoubleJump = true;
+                canJump = true;
+                isTouchingGrass = true;
+                charges = 3;
+            }
+        }
+
+        if (hitData3.collider)
+        {
             canDoubleJump = true;
             canJump = true;
             isTouchingGrass = true;
             charges = 3;
         }
-        else
-        {
+
+        h1 = hitData.collider;
+        h2 = hitData2.collider;
+        h3 = hitData3.collider;
+
+        if (!hitData.collider && !hitData2.collider && !hitData3.collider)
+        {   
+            Debug.Log("In Air");
             isTouchingGrass = false;
         }
 
-        if(isTouchingGrass)
+        if (isTouchingGrass)
         {
             canJump = true;
         }
@@ -219,13 +276,7 @@ public class Movement : MonoBehaviour
             canJump = false;
         }
 
-        /*
-        if (hitData.collider.CompareTag("Ground"))
-        {
-            canDoubleJump = true;
-            canJump = true;
-        }
-        */
+        #endregion
     }
 
     public void Jump()
@@ -236,6 +287,7 @@ public class Movement : MonoBehaviour
             {
                 rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
                 canJump = false;
+                //isTouchingGrass = false;
             }
             else if (canDoubleJump)
             {
@@ -264,6 +316,24 @@ public class Movement : MonoBehaviour
                 charges--;
             }
         }
-    }     
- }
+    }
+
+    /*
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Blue") && gameObject.layer == 7)
+        {
+            Physics2D.IgnoreCollision(bc, collision.collider);
+            
+        }
+        else
+        {
+            if (collision.gameObject.CompareTag("Red") && gameObject.layer == 8)
+            {
+                Physics2D.IgnoreCollision(bc, collision.collider);
+            }
+        }
+    }
+    */
+}
 
