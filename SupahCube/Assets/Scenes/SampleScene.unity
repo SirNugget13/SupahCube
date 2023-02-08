@@ -1129,9 +1129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f892652b1b55da64496b7748f507ebbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  h1: 0
-  h2: 0
-  h3: 0
+  animationScaler: 0
   cubeColor: {r: 0.12677999, g: 0.4758487, b: 0.7264151, a: 1}
   cubeColorRed: {r: 0.8018868, g: 0.11725702, b: 0.11725702, a: 1}
   cubeColorBlue: {r: 0.1254902, g: 0.4745098, b: 0.7254902, a: 1}
@@ -1145,9 +1143,8 @@ MonoBehaviour:
   bigJumpForce: 45
   dashRechargeTime: 0.3
   bigJumpChargeTime: 2
-  charges: 3
+  charges: 2
   groundTransform: {fileID: 1163873422}
-  isTouchingGrass: 0
 --- !u!50 &1404245254
 Rigidbody2D:
   serializedVersion: 4
@@ -1263,7 +1260,7 @@ MonoBehaviour:
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 0
-  m_PointLightOuterRadius: 1.5
+  m_PointLightOuterRadius: 1.7
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1

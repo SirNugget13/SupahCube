@@ -7,9 +7,7 @@ public class Movement : MonoBehaviour
 {
     #region Public Variables
 
-    public bool h1;
-    public bool h2;
-    public bool h3;
+    public float animationScaler = 1;
 
     public Color cubeColor;
     public Color cubeColorRed;
@@ -36,9 +34,11 @@ public class Movement : MonoBehaviour
     #endregion
 
     #region Private Variables
+    private bool doIgnoreChargeLightChange;
+
     private bool canMove = true;
 
-    public bool isTouchingGrass;
+    private bool isTouchingGrass;
 
     private bool isBlue = true;
 
@@ -46,6 +46,7 @@ public class Movement : MonoBehaviour
     private RaycastHit2D hitData2;
     private RaycastHit2D hitData3;
 
+    private float curRadius;
 
     private bool canJump = true;
     private bool canDoubleJump = true;
@@ -94,21 +95,33 @@ public class Movement : MonoBehaviour
         if(Input.GetButtonDown("Fire3"))
         {
             bigJumpTimer = 0;
+            doIgnoreChargeLightChange = true;
+            if(isTouchingGrass)
+            {
+                l2d.pointLightInnerRadius = 1.7f;
+            }
         }
 
         if (Input.GetButton("Fire3"))
         {
             if(isTouchingGrass)
             {
+                
                 canMove = false;
 
-                l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);//Mathf.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime);
-                l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.8f, bigJumpChargeTime * Time.deltaTime);
+                if(!willBigJump)
+                {
+                    l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);//Mathf.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime);
+                    l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.8f, bigJumpChargeTime * Time.deltaTime);
+                    l2d.intensity = Mathf.Lerp(l2d.intensity, 100, bigJumpChargeTime * Time.deltaTime);
+                }
 
                 if (willBigJump)
                 {
-                    sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 0.2f);
-                    l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1.5f, 0.2f);
+                    sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 1f * Time.deltaTime);
+                    l2d.pointLightOuterRadius = LeanTween.linear(l2d.pointLightOuterRadius, 2.5f, 5 * Time.deltaTime);
+                                                //Mathf.Lerp(l2d.pointLightOuterRadius, 2.5f, 1f * Time.deltaTime);
+                    l2d.intensity = Mathf.Lerp(l2d.intensity, 10, 1f * Time.deltaTime);
                 }
 
                 if (!willBigJump)
@@ -119,7 +132,6 @@ public class Movement : MonoBehaviour
                     {
                         willBigJump = true;
                         bigJumpTimer = 0;
-                        charges--;
                     }
                 }
             }
@@ -131,7 +143,8 @@ public class Movement : MonoBehaviour
 
             if (isBlue)
             {
-                l2d.pointLightOuterRadius = 1.5f;
+                l2d.pointLightOuterRadius = 1.7f;
+                l2d.intensity = 10;
 
                 sr.color = cubeColorBlue;
                 cubeColor = cubeColorBlue;
@@ -140,7 +153,8 @@ public class Movement : MonoBehaviour
             }
             else
             {
-                l2d.pointLightOuterRadius = 1.5f;
+                l2d.pointLightOuterRadius = 1.7f;
+                l2d.intensity = 10;
 
                 sr.color = cubeColorRed;
                 cubeColor = cubeColorRed;
@@ -153,7 +167,11 @@ public class Movement : MonoBehaviour
             {
                 rb.AddForce(Vector2.up * bigJumpForce, ForceMode2D.Impulse);
                 willBigJump = false;
+                charges--;
+                ChargeManager();
             }
+
+            doIgnoreChargeLightChange = false;
         }
 
         if (Input.GetButtonDown("Jump"))
@@ -187,14 +205,20 @@ public class Movement : MonoBehaviour
         if (!canDash)
         {
             dashTimer += Time.deltaTime;
-            Debug.Log(dashTimer);
             if (dashTimer >= dashRechargeTime)
             {
                 canDash = true;
             }
         }
-        
-        //rb.position = rb.position + movement;
+
+        Debug.Log(curRadius);
+
+        if(!doIgnoreChargeLightChange)
+        {
+            //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, curRadius, 0.2f * Time.deltaTime);
+        }
+
+        //transform.localScale = new Vector3(VelocityToScaleXCalc(transform.localScale.x), VelocityToScaleYCalc(transform.localScale.y));      
     }
 
     private void FixedUpdate()
@@ -233,7 +257,8 @@ public class Movement : MonoBehaviour
                 canDoubleJump = true;
                 canJump = true;
                 isTouchingGrass = true;
-                charges = 3;
+                charges = 2;
+                ChargeManager();
             }
         }
 
@@ -245,7 +270,8 @@ public class Movement : MonoBehaviour
                 canDoubleJump = true;
                 canJump = true;
                 isTouchingGrass = true;
-                charges = 3;
+                charges = 2;
+                ChargeManager();
             }
         }
 
@@ -254,16 +280,12 @@ public class Movement : MonoBehaviour
             canDoubleJump = true;
             canJump = true;
             isTouchingGrass = true;
-            charges = 3;
+            charges = 2;
+            ChargeManager();
         }
-
-        h1 = hitData.collider;
-        h2 = hitData2.collider;
-        h3 = hitData3.collider;
 
         if (!hitData.collider && !hitData2.collider && !hitData3.collider)
         {   
-            Debug.Log("In Air");
             isTouchingGrass = false;
         }
 
@@ -274,6 +296,7 @@ public class Movement : MonoBehaviour
         else
         {
             canJump = false;
+            ChargeManager();
         }
 
         #endregion
@@ -287,12 +310,13 @@ public class Movement : MonoBehaviour
             {
                 rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
                 canJump = false;
-                //isTouchingGrass = false;
+                ChargeManager();               
             }
             else if (canDoubleJump)
             {
                 rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
                 canDoubleJump = false;
+                ChargeManager();
             }
         }
      }
@@ -302,8 +326,7 @@ public class Movement : MonoBehaviour
         if(canMove)
         {
             if (charges > 0 && ableDash)
-            {
-                Debug.Log("Dashin");
+            { 
                 rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
 
                 this.Wait(0.1f, () =>
@@ -314,24 +337,63 @@ public class Movement : MonoBehaviour
                 dashTimer = 0;
                 canDash = false;
                 charges--;
+                ChargeManager();
             }
         }
     }
 
-    /*
-    private void OnCollisionStay2D(Collision2D collision)
+    public void ChargeManager()
     {
-        if (collision.gameObject.CompareTag("Blue") && gameObject.layer == 7)
+        curRadius = l2d.pointLightOuterRadius;
+        
+        if(canJump && canDoubleJump)
         {
-            Physics2D.IgnoreCollision(bc, collision.collider);
-            
+            curRadius = 1.7f;
+            curRadius =- curRadius - (0.2f * (2 - charges));
         }
         else
         {
-            if (collision.gameObject.CompareTag("Red") && gameObject.layer == 8)
+            if (canDoubleJump && !canJump)
             {
-                Physics2D.IgnoreCollision(bc, collision.collider);
+                curRadius = 1.5f;
+                curRadius = curRadius - (0.2f * (2 - charges));
             }
+            else
+            {
+                if (!canDoubleJump && !canJump)
+                {
+                    curRadius = 1.2f;
+                    curRadius = curRadius - (0.2f * (2 - charges));
+                }
+            }
+        }
+
+        l2d.pointLightOuterRadius = curRadius;
+
+    }
+
+    /*
+    float VelocityToScaleXCalc(float xScale)
+    {
+        if(rb.velocity.x != 0 && xScale > 0.4)
+        {
+            return xScale / (rb.velocity.x / animationScaler);
+        }
+        else
+        {
+            return xScale;
+        }
+    }
+
+    float VelocityToScaleYCalc(float yScale)
+    {
+        if (rb.velocity.y != 0 && yScale > 0.4)
+        {
+            return yScale / (rb.velocity.y / animationScaler);
+        }
+        else
+        {
+            return yScale;
         }
     }
     */
