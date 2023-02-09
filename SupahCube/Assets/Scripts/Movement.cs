@@ -95,109 +95,21 @@ public class Movement : MonoBehaviour
         if(Input.GetButtonDown("Fire3"))
         {
             bigJumpTimer = 0;
-            doIgnoreChargeLightChange = true;
-            if(isTouchingGrass)
-            {
-                l2d.pointLightInnerRadius = 1.7f;
-            }
         }
 
         if (Input.GetButton("Fire3"))
         {
-            if(isTouchingGrass)
-            {
-                
-                canMove = false;
-
-                if(!willBigJump)
-                {
-                    l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);//Mathf.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime);
-                    l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.8f, bigJumpChargeTime * Time.deltaTime);
-                    l2d.intensity = Mathf.Lerp(l2d.intensity, 100, bigJumpChargeTime * Time.deltaTime);
-                }
-
-                if (willBigJump)
-                {
-                    sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 1f * Time.deltaTime);
-                    l2d.pointLightOuterRadius = LeanTween.linear(l2d.pointLightOuterRadius, 2.5f, 5 * Time.deltaTime);
-                                                //Mathf.Lerp(l2d.pointLightOuterRadius, 2.5f, 1f * Time.deltaTime);
-                    l2d.intensity = Mathf.Lerp(l2d.intensity, 10, 1f * Time.deltaTime);
-                }
-
-                if (!willBigJump)
-                {
-                    bigJumpTimer += Time.deltaTime;
-
-                    if (bigJumpTimer >= bigJumpChargeTime && isTouchingGrass)
-                    {
-                        willBigJump = true;
-                        bigJumpTimer = 0;
-                    }
-                }
-            }
+            BigJumpCharge();
         }
 
         if(Input.GetButtonUp("Fire3"))
         {
-            canMove = true;
-
-            if (isBlue)
-            {
-                l2d.pointLightOuterRadius = 1.7f;
-                l2d.intensity = 10;
-
-                sr.color = cubeColorBlue;
-                cubeColor = cubeColorBlue;
-
-                l2d.color = cubeColor;
-            }
-            else
-            {
-                l2d.pointLightOuterRadius = 1.7f;
-                l2d.intensity = 10;
-
-                sr.color = cubeColorRed;
-                cubeColor = cubeColorRed;
-
-                l2d.color = cubeColor;
-            }
-
-
-            if (willBigJump)
-            {
-                rb.AddForce(Vector2.up * bigJumpForce, ForceMode2D.Impulse);
-                willBigJump = false;
-                charges--;
-                ChargeManager();
-            }
-
-            doIgnoreChargeLightChange = false;
+            BigJumpApply();
         }
 
         if (Input.GetButtonDown("Jump"))
         {
-            if(isBlue)
-            {
-                gameObject.layer = 10;
-                
-                sr.color = cubeColorRed;
-                cubeColor = cubeColorRed;
-
-                l2d.color = cubeColor;
-
-                isBlue = false;
-            }
-            else
-            {
-                gameObject.layer = 9;
-
-                sr.color = cubeColorBlue;
-                cubeColor = cubeColorBlue;
-
-                l2d.color = cubeColor;
-
-                isBlue = true;
-            }
+            ColorChange();
         }
 
         #endregion
@@ -209,85 +121,19 @@ public class Movement : MonoBehaviour
             {
                 canDash = true;
             }
-        }
-
-        Debug.Log(curRadius);
-
-        if(!doIgnoreChargeLightChange)
-        {
-            //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, curRadius, 0.2f * Time.deltaTime);
-        }
-
-        //transform.localScale = new Vector3(VelocityToScaleXCalc(transform.localScale.x), VelocityToScaleYCalc(transform.localScale.y));      
+        }     
     }
 
     private void FixedUpdate()
     {
-        #region Movement
-
-        float targetSpeed = moveHorizontal * speed;
-
-        float speedDif = targetSpeed - rb.velocity.x;
-
-        float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
-
-        float movement = Mathf.Pow(Mathf.Abs(speedDif) * accelRate, 0.9f) * Mathf.Sign(speedDif);
-
-        if(canMove)
-        {
-            rb.AddForce(movement * Vector2.right);
-        }
-
-        #endregion
+        PhysicsMovement();
     }
 
     private void LateUpdate()
     {
-        #region Jump Manager
+        #region Jump Checker
 
-        hitData = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("BlueGround"));
-        hitData2 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("RedGround"));
-        hitData3 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("Ground"));
-
-        if (hitData.collider)
-        {
-            if(!isBlue)
-            {
-                //Debug.Log(hitData.collider.gameObject.name);
-                canDoubleJump = true;
-                canJump = true;
-                isTouchingGrass = true;
-                charges = 2;
-                ChargeManager();
-            }
-        }
-
-        if (hitData2.collider)
-        {
-            if(isBlue)
-            {
-                //Debug.Log(hitData.collider.gameObject.name);
-                canDoubleJump = true;
-                canJump = true;
-                isTouchingGrass = true;
-                charges = 2;
-                ChargeManager();
-            }
-        }
-
-        if (hitData3.collider)
-        {
-            canDoubleJump = true;
-            canJump = true;
-            isTouchingGrass = true;
-            charges = 2;
-            ChargeManager();
-        }
-
-        if (!hitData.collider && !hitData2.collider && !hitData3.collider)
-        {   
-            isTouchingGrass = false;
-        }
+        LinecastGroundDetection();
 
         if (isTouchingGrass)
         {
@@ -296,21 +142,24 @@ public class Movement : MonoBehaviour
         else
         {
             canJump = false;
-            ChargeManager();
         }
 
         #endregion
     }
 
+    #region Custom Functions
+
+    #region Button Functions
+
     public void Jump()
     {
-        if(canMove)
+        if (canMove)
         {
             if (canJump)
             {
                 rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
                 canJump = false;
-                ChargeManager();               
+                ChargeManager();
             }
             else if (canDoubleJump)
             {
@@ -319,14 +168,14 @@ public class Movement : MonoBehaviour
                 ChargeManager();
             }
         }
-     }
+    }
 
     public void Dash(bool ableDash)
-    {   
-        if(canMove)
+    {
+        if (canMove)
         {
             if (charges > 0 && ableDash)
-            { 
+            {
                 rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
 
                 this.Wait(0.1f, () =>
@@ -342,8 +191,104 @@ public class Movement : MonoBehaviour
         }
     }
 
+    void BigJumpCharge()
+    {
+        if (isTouchingGrass)
+        {
+            canMove = false;
+
+            if (!willBigJump)
+            {
+                //Condense the l2d light and turn to purple as charging the jump
+                l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);
+                l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.9f, bigJumpChargeTime * Time.deltaTime);
+                l2d.intensity = Mathf.Lerp(l2d.intensity, 25, bigJumpChargeTime * Time.deltaTime);
+
+                bigJumpTimer += Time.deltaTime;
+
+                //Checks if the jump is charged
+                if (bigJumpTimer >= bigJumpChargeTime && isTouchingGrass)
+                {
+                    willBigJump = true;
+                    bigJumpTimer = 0;
+                }
+            }
+
+            //if the jump is charged, expand the l2d light to showed charged
+            if (willBigJump)
+            {
+                sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 1f * Time.deltaTime);
+                l2d.pointLightOuterRadius = LeanTween.linear(l2d.pointLightOuterRadius, 2.5f, 5 * Time.deltaTime);
+                l2d.intensity = Mathf.Lerp(l2d.intensity, 10, 1f * Time.deltaTime);
+            }
+        }
+    }
+
+    void BigJumpApply()
+    {
+        canMove = true;
+
+        //reset back to normal light
+        if (isBlue)
+        {
+            l2d.pointLightOuterRadius = 1.7f;
+            l2d.intensity = 10;
+
+            sr.color = cubeColorBlue;
+            cubeColor = cubeColorBlue;
+
+            l2d.color = cubeColor;
+        }
+        else
+        {
+            l2d.pointLightOuterRadius = 1.7f;
+            l2d.intensity = 10;
+
+            sr.color = cubeColorRed;
+            cubeColor = cubeColorRed;
+
+            l2d.color = cubeColor;
+        }
+
+        //Apply the jump force
+        if (willBigJump)
+        {
+            rb.AddForce(Vector2.up * bigJumpForce, ForceMode2D.Impulse);
+            willBigJump = false;
+        }
+    }
+
+    public void ColorChange()
+    {
+        if (isBlue)
+        {
+            gameObject.layer = 10;
+
+            sr.color = cubeColorRed;
+            cubeColor = cubeColorRed;
+
+            l2d.color = cubeColor;
+
+            isBlue = false;
+        }
+        else
+        {
+            gameObject.layer = 9;
+
+            sr.color = cubeColorBlue;
+            cubeColor = cubeColorBlue;
+
+            l2d.color = cubeColor;
+
+            isBlue = true;
+        }
+    }
+
+    #endregion
+
     public void ChargeManager()
     {
+        /*
         curRadius = l2d.pointLightOuterRadius;
         
         if(canJump && canDoubleJump)
@@ -369,7 +314,70 @@ public class Movement : MonoBehaviour
         }
 
         l2d.pointLightOuterRadius = curRadius;
+        */
+    }
+    
+    void PhysicsMovement()
+    {
+        float targetSpeed = moveHorizontal * speed;
 
+        float speedDif = targetSpeed - rb.velocity.x;
+
+        float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
+
+        float movement = Mathf.Pow(Mathf.Abs(speedDif) * accelRate, 0.9f) * Mathf.Sign(speedDif);
+
+        if (canMove)
+        {
+            rb.AddForce(movement * Vector2.right);
+        }
+    }
+
+    void LinecastGroundDetection()
+    {
+        hitData = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("BlueGround"));
+        hitData2 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("RedGround"));
+        hitData3 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("Ground"));
+
+        if (hitData.collider)
+        {
+            if (!isBlue)
+            {
+                //Debug.Log(hitData.collider.gameObject.name);
+                canDoubleJump = true;
+                canJump = true;
+                isTouchingGrass = true;
+                charges = 2;
+                ChargeManager();
+            }
+        }
+
+        if (hitData2.collider)
+        {
+            if (isBlue)
+            {
+                //Debug.Log(hitData.collider.gameObject.name);
+                canDoubleJump = true;
+                canJump = true;
+                isTouchingGrass = true;
+                charges = 2;
+                ChargeManager();
+            }
+        }
+
+        if (hitData3.collider)
+        {
+            canDoubleJump = true;
+            canJump = true;
+            isTouchingGrass = true;
+            charges = 2;
+            ChargeManager();
+        }
+
+        if (!hitData.collider && !hitData2.collider && !hitData3.collider)
+        {
+            isTouchingGrass = false;
+        }
     }
 
     /*
@@ -397,5 +405,6 @@ public class Movement : MonoBehaviour
         }
     }
     */
+    #endregion
 }
 
