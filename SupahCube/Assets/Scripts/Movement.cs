@@ -7,58 +7,74 @@ public class Movement : MonoBehaviour
 {
     #region Public Variables
 
-    public float animationScaler = 1;
+    public float animationScaler = 1;//attempted physics based animation scaler
 
+    //Colors used for the light and sprite on the player
     public Color cubeColor;
     public Color cubeColorRed;
     public Color cubeColorBlue;
     public Color cubeColorBigJumpCharged;
 
+    //Movement speed
     public float speed = 5;
     public float maxSpeed = 100;
 
+    //Movement feels
     public float acceleration;
     public float deceleration;
    
+    //Jump heights and dash distance
     public float jumpForce;
     public float dashForce;
     public float bigJumpForce;
 
+    //Recharge time for abilities
     public float dashRechargeTime;
     public float bigJumpChargeTime;
 
-    public int charges = 3;
+    //How many dashes can be performed in the air
+    public int charges = 2;
 
+    //Position of the linecast that checks if the player is on the ground
     public Transform groundTransform;
 
     #endregion
 
     #region Private Variables
-    private bool doIgnoreChargeLightChange;
+    
+    //ignore the light setter if the player is charging the super jump
+    private bool IgnoreLightSetter;
 
+    //disallow movement if the player is chargign the super jump
     private bool canMove = true;
 
+    //true if the player is on the ground
     private bool isTouchingGrass;
 
+    //Reference to what color the player is
     private bool isBlue = true;
 
-    private RaycastHit2D hitData;
-    private RaycastHit2D hitData2;
-    private RaycastHit2D hitData3;
+    //Linecast data
+    private RaycastHit2D hitData;//Detects BLUE platforms
+    private RaycastHit2D hitData2;//Detects RED platforms
+    private RaycastHit2D hitData3;//Detects normal platforms
 
-    private float curRadius;
-
+    //Checks how many jumps the player can perform
     private bool canJump = true;
     private bool canDoubleJump = true;
 
+    //Checks for how long the player has been charging the super jump and if they have charged long enough to jump
     private float bigJumpTimer = 0;
     private bool willBigJump;
 
+    //Checks if the player can dash based on the dash cooldown
     private bool canDash;
     private float dashTimer = 0;
 
+    //Placeholder to get the horizontal movement axis for the player
     private float moveHorizontal;
 
+    //Components on the player
     private Light2D l2d;
     private SpriteRenderer sr;
     private Rigidbody2D rb;
@@ -69,6 +85,7 @@ public class Movement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //Getting References to components on the player
         rb = gameObject.GetComponent<Rigidbody2D>();
         sr = gameObject.GetComponent<SpriteRenderer>();
         l2d = gameObject.GetComponent<Light2D>();
@@ -78,42 +95,52 @@ public class Movement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Get the controller joystick axis
         moveHorizontal = Input.GetAxisRaw("Horizontal");
 
         #region Button Inputs
 
-        if (Input.GetButtonDown("Fire1"))
+        //Performs a jump with the white button
+        if (Input.GetButtonDown("Jump"))
         {
             Jump();
         }
 
-        if(Input.GetButtonDown("Fire2"))
+        //Performs a dash with the green button
+        if(Input.GetButtonDown("Dash"))
         {
             Dash(canDash);
         }
 
-        if(Input.GetButtonDown("Fire3"))
+        //Begins charging the big jump
+        if(Input.GetButtonDown("SuperJump"))
         {
             bigJumpTimer = 0;
+            IgnoreLightSetter = true;
         }
 
-        if (Input.GetButton("Fire3"))
+        //Continues charging the big jump
+        if (Input.GetButton("SuperJump"))
         {
             BigJumpCharge();
         }
 
-        if(Input.GetButtonUp("Fire3"))
+        //Activates the big jump if the player held the button for long enough
+        if(Input.GetButtonUp("SuperJump"))
         {
+            IgnoreLightSetter = false;
             BigJumpApply();
         }
 
-        if (Input.GetButtonDown("Jump"))
+        //Changes the color of the player
+        if (Input.GetButtonDown("ColorChange"))
         {
             ColorChange();
         }
 
         #endregion
 
+        //Checks if the player can dash based on the dash timer
         if (!canDash)
         {
             dashTimer += Time.deltaTime;
@@ -121,11 +148,15 @@ public class Movement : MonoBehaviour
             {
                 canDash = true;
             }
-        }     
+        }
+
+        //Sets the radius of the light based on how many jumps and dashes have been performed
+        LightRadiusSetter();
     }
 
     private void FixedUpdate()
     {
+        //Applies the physics based movement
         PhysicsMovement();
     }
 
@@ -133,8 +164,10 @@ public class Movement : MonoBehaviour
     {
         #region Jump Checker
 
+        //Detects blue, red, and normal ground types
         LinecastGroundDetection();
 
+        //Checks if the player can jump based on if they're on the ground or not
         if (isTouchingGrass)
         {
             canJump = true;
@@ -153,57 +186,62 @@ public class Movement : MonoBehaviour
 
     public void Jump()
     {
+        //Checks if the player is holding the big jump charge
         if (canMove)
         {
             if (canJump)
             {
                 rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
                 canJump = false;
-                ChargeManager();
             }
             else if (canDoubleJump)
             {
                 rb.AddForce(new Vector2(0, jumpForce - rb.velocity.y), ForceMode2D.Impulse);
                 canDoubleJump = false;
-                ChargeManager();
             }
         }
     }
 
     public void Dash(bool ableDash)
     {
+        //Checks if the player is holding the big jump charge
         if (canMove)
         {
+            //Checks if the player still has charges to use and the dash cooldown has passed
             if (charges > 0 && ableDash)
             {
                 rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
 
+                //After a delay, stop the player's momentum
                 this.Wait(0.1f, () =>
                 {
                     rb.velocity.Set(0, rb.velocity.y);
                 });
 
+                //Reset dash cooldown and use a charge
                 dashTimer = 0;
                 canDash = false;
                 charges--;
-                ChargeManager();
             }
         }
     }
 
     void BigJumpCharge()
     {
+        //Check if the player is on the ground
         if (isTouchingGrass)
         {
+            //Stop the player from moving if they're holding the charge button
             canMove = false;
 
             if (!willBigJump)
             {
                 //Condense the l2d light and turn to purple as charging the jump
-                l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);
-                l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.9f, bigJumpChargeTime * Time.deltaTime);
-                l2d.intensity = Mathf.Lerp(l2d.intensity, 25, bigJumpChargeTime * Time.deltaTime);
-
+                l2d.color = Color.Lerp(l2d.color, cubeColorBigJumpCharged, bigJumpChargeTime * Time.deltaTime);//Change the color of the light
+                l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 0.9f, bigJumpChargeTime * Time.deltaTime);//Change the radius of the light
+                l2d.intensity = Mathf.Lerp(l2d.intensity, 25, bigJumpChargeTime * Time.deltaTime);//Change the intensity of the light
+                
+                //Add to the charge timer
                 bigJumpTimer += Time.deltaTime;
 
                 //Checks if the jump is charged
@@ -214,21 +252,23 @@ public class Movement : MonoBehaviour
                 }
             }
 
-            //if the jump is charged, expand the l2d light to showed charged
+            //if the jump is charged, expand the l2d light to show the player the jump is charged
             if (willBigJump)
             {
-                sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 1f * Time.deltaTime);
-                l2d.pointLightOuterRadius = LeanTween.linear(l2d.pointLightOuterRadius, 2.5f, 5 * Time.deltaTime);
-                l2d.intensity = Mathf.Lerp(l2d.intensity, 10, 1f * Time.deltaTime);
+                //Change the attributes to show that the jump is charged
+                sr.color = Color.Lerp(sr.color, cubeColorBigJumpCharged, 1f * Time.deltaTime);//Change the sprite of the player to purple
+                l2d.pointLightOuterRadius = LeanTween.linear(l2d.pointLightOuterRadius, 2.5f, 5 * Time.deltaTime);//Change the Radius to be bigger
+                l2d.intensity = Mathf.Lerp(l2d.intensity, 10, 1f * Time.deltaTime);//Change the intensity of the light
             }
         }
     }
 
     void BigJumpApply()
     {
+        //Return movement
         canMove = true;
 
-        //reset back to normal light
+        //reset back to normal light and sprite colors
         if (isBlue)
         {
             l2d.pointLightOuterRadius = 1.7f;
@@ -260,6 +300,7 @@ public class Movement : MonoBehaviour
 
     public void ColorChange()
     {
+        //If blue, change to red
         if (isBlue)
         {
             gameObject.layer = 10;
@@ -272,6 +313,7 @@ public class Movement : MonoBehaviour
             isBlue = false;
         }
         else
+        //if red, change to blue
         {
             gameObject.layer = 9;
 
@@ -286,38 +328,49 @@ public class Movement : MonoBehaviour
 
     #endregion
 
-    public void ChargeManager()
+    public void LightRadiusSetter()
     {
-        /*
-        curRadius = l2d.pointLightOuterRadius;
-        
-        if(canJump && canDoubleJump)
+        if(!IgnoreLightSetter)
         {
-            curRadius = 1.7f;
-            curRadius =- curRadius - (0.2f * (2 - charges));
-        }
-        else
-        {
-            if (canDoubleJump && !canJump)
+            //Inefficient and dumb brute force check for all possibilities 
+            if (canDoubleJump && charges == 2)
             {
-                curRadius = 1.5f;
-                curRadius = curRadius - (0.2f * (2 - charges));
+                l2d.pointLightOuterRadius = 1.7f;
+                //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1.7f, 0.2f * Time.deltaTime);
             }
-            else
-            {
-                if (!canDoubleJump && !canJump)
-                {
-                    curRadius = 1.2f;
-                    curRadius = curRadius - (0.2f * (2 - charges));
-                }
-            }
-        }
 
-        l2d.pointLightOuterRadius = curRadius;
-        */
+            if (!canDoubleJump && charges == 2)
+            {
+                l2d.pointLightOuterRadius = 1.5f;
+                //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1.5f, 0.2f * Time.deltaTime);
+            }
+
+            if (canDoubleJump && charges == 1)
+            {
+                l2d.pointLightOuterRadius = 1.5f;
+                //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1.5f, 0.2f * Time.deltaTime);
+            }
+
+            if (!canDoubleJump && charges == 1)
+            {
+                l2d.pointLightOuterRadius = 1.1f;
+            }
+
+            if (canDoubleJump && charges == 0)
+            {
+                l2d.pointLightOuterRadius = 1.1f;
+                //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1.1f, 0.2f * Time.deltaTime);
+            }
+
+            if (!canDoubleJump && charges == 0)
+            {
+                l2d.pointLightOuterRadius = 0.9f;
+                //l2d.pointLightOuterRadius = Mathf.Lerp(l2d.pointLightOuterRadius, 1f, 0.2f * Time.deltaTime);
+            }
+        } 
     }
-    
-    void PhysicsMovement()
+
+    void PhysicsMovement()//I stole this so I don't really understand it
     {
         float targetSpeed = moveHorizontal * speed;
 
@@ -335,12 +388,15 @@ public class Movement : MonoBehaviour
 
     void LinecastGroundDetection()
     {
+        //Seperate checks for different types of ground to make Layers work
         hitData = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("BlueGround"));
         hitData2 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("RedGround"));
         hitData3 = Physics2D.Linecast(gameObject.transform.position, groundTransform.position, 1 << LayerMask.NameToLayer("Ground"));
 
+        //Checks if the 1st linecast hit something blue
         if (hitData.collider)
         {
+            //Do collision with the object if the player is red
             if (!isBlue)
             {
                 //Debug.Log(hitData.collider.gameObject.name);
@@ -348,12 +404,13 @@ public class Movement : MonoBehaviour
                 canJump = true;
                 isTouchingGrass = true;
                 charges = 2;
-                ChargeManager();
             }
         }
 
+        //Checks if the 2nd linecast hit something red
         if (hitData2.collider)
         {
+            //Do collision with the object if the player is blue
             if (isBlue)
             {
                 //Debug.Log(hitData.collider.gameObject.name);
@@ -361,19 +418,20 @@ public class Movement : MonoBehaviour
                 canJump = true;
                 isTouchingGrass = true;
                 charges = 2;
-                ChargeManager();
             }
         }
 
+        //Checks if the normal ground
         if (hitData3.collider)
         {
+            //Do collision
             canDoubleJump = true;
             canJump = true;
             isTouchingGrass = true;
             charges = 2;
-            ChargeManager();
         }
 
+        //If none of the linecasts are hitting something on their respective layers, the player is in the air.
         if (!hitData.collider && !hitData2.collider && !hitData3.collider)
         {
             isTouchingGrass = false;
