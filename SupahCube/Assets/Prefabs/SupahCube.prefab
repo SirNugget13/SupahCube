@@ -35,7 +35,7 @@ Transform:
   m_Children:
   - {fileID: 8809685244291261447}
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &8809685244108569994
 SpriteRenderer:
@@ -106,13 +106,15 @@ MonoBehaviour:
   cubeColorRed: {r: 0.8018868, g: 0.11725702, b: 0.11725702, a: 1}
   cubeColorBlue: {r: 0.1254902, g: 0.4745098, b: 0.7254902, a: 1}
   cubeColorBigJumpCharged: {r: 0.6149782, g: 0.2216981, b: 1, a: 1}
-  speed: 12
+  speed: 9
   maxSpeed: 100
-  acceleration: 7
+  acceleration: 12
   deceleration: 7
-  jumpForce: 15
-  dashForce: 20
+  jumpForce: 20
+  dashForce: 25
   bigJumpForce: 45
+  jumpCutMultiplier: 2.5
+  lowJumpCutMultiplier: 3
   dashRechargeTime: 0.3
   bigJumpChargeTime: 2
   charges: 2
@@ -158,9 +160,9 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 2.5
+  m_GravityScale: 3
   m_Material: {fileID: 0}
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4

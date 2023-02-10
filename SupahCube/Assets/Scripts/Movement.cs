@@ -27,6 +27,9 @@ public class Movement : MonoBehaviour
     public float jumpForce;
     public float dashForce;
     public float bigJumpForce;
+    public float jumpCutMultiplier = 2.5f;
+    public float lowJumpCutMultiplier = 2;
+    //public float jumpTime;
 
     //Recharge time for abilities
     public float dashRechargeTime;
@@ -62,6 +65,7 @@ public class Movement : MonoBehaviour
     //Checks how many jumps the player can perform
     private bool canJump = true;
     private bool canDoubleJump = true;
+    //private bool isJumping;
 
     //Checks for how long the player has been charging the super jump and if they have charged long enough to jump
     private float bigJumpTimer = 0;
@@ -106,6 +110,18 @@ public class Movement : MonoBehaviour
             Jump();
         }
 
+        if(rb.velocity.y < 0)
+        {
+            rb.velocity += Vector2.up * Physics2D.gravity.y * (jumpCutMultiplier - 1) * Time.deltaTime;
+        }
+        else
+        {
+            if(rb.velocity.y > 0 && !Input.GetButton("Jump"))
+            {
+                rb.velocity += Vector2.up * Physics2D.gravity.y * (lowJumpCutMultiplier - 1) * Time.deltaTime;
+            }
+        }
+        
         //Performs a dash with the green button
         if(Input.GetButtonDown("Dash"))
         {
@@ -202,6 +218,11 @@ public class Movement : MonoBehaviour
         }
     }
 
+    public void JumpCut()
+    {
+      
+    }
+
     public void Dash(bool ableDash)
     {
         //Checks if the player is holding the big jump charge
@@ -211,11 +232,15 @@ public class Movement : MonoBehaviour
             if (charges > 0 && ableDash)
             {
                 rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
-
+                rb.constraints = RigidbodyConstraints2D.FreezePositionY;
+                
                 //After a delay, stop the player's momentum
-                this.Wait(0.1f, () =>
+                this.Wait(0.2f, () =>
                 {
                     rb.velocity.Set(0, rb.velocity.y);
+                    rb.constraints = RigidbodyConstraints2D.None;
+                    rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+                    transform.rotation = Quaternion.identity;
                 });
 
                 //Reset dash cooldown and use a charge
