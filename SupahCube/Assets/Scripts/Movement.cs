@@ -48,6 +48,8 @@ public class Movement : MonoBehaviour
     //ignore the light setter if the player is charging the super jump
     private bool IgnoreLightSetter;
 
+    private float DirectionFacing;
+
     //disallow movement if the player is chargign the super jump
     private bool canMove = true;
 
@@ -231,7 +233,7 @@ public class Movement : MonoBehaviour
             //Checks if the player still has charges to use and the dash cooldown has passed
             if (charges > 0 && ableDash)
             {
-                rb.AddForce(new Vector2(dashForce * Input.GetAxisRaw("Horizontal"), 0), ForceMode2D.Impulse);
+                rb.AddForce(new Vector2(dashForce * DirectionFacing, 0), ForceMode2D.Impulse);
                 rb.constraints = RigidbodyConstraints2D.FreezePositionY;
                 
                 //After a delay, stop the player's momentum
@@ -408,6 +410,16 @@ public class Movement : MonoBehaviour
         if (canMove)
         {
             rb.AddForce(movement * Vector2.right);
+
+            if (moveHorizontal > 0)
+            {
+                DirectionFacing = 1;
+            }
+
+            if (moveHorizontal < 0)
+            {
+                DirectionFacing = -1;
+            }    
         }
     }
 
