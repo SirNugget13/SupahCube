@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 8809685244108569985}
   m_Layer: 9
   m_Name: SupahCube
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -35,7 +35,7 @@ Transform:
   m_Children:
   - {fileID: 8809685244291261447}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &8809685244108569994
 SpriteRenderer:
@@ -111,7 +111,7 @@ MonoBehaviour:
   acceleration: 12
   deceleration: 7
   jumpForce: 20
-  dashForce: 25
+  dashForce: 30
   bigJumpForce: 45
   jumpCutMultiplier: 2.5
   lowJumpCutMultiplier: 3
